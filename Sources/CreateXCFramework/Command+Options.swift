@@ -40,6 +40,9 @@ extension Command {
         @Flag(help: "Enables Library Evolution for the whole build stack. Normally we apply it only to the targets listed to be built to work around issues with projects that don't support it.")
         var stackEvolution: Bool = false
 
+        @Flag(help: "Fix the path to the headers when using the SwiftPM '.headerSearchPath(...)' build setting.")
+        var fixClangHeaderSearchPaths: Bool = false
+
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
 

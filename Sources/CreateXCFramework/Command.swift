@@ -81,6 +81,12 @@ struct Command: ParsableCommand {
             try project.enableDistribution(targets: productNames, xcconfig: AbsolutePath(package.distributionBuildXcconfig.path).relative(to: AbsolutePath(package.rootDirectory.path)))
         }
 
+        // Workaround SwiftPM not respecting the `.headerSearchPath(...)` build settings in the
+        // generated Xcode project.
+        if self.options.fixClangHeaderSearchPaths {
+            try project.fixClangHeaderSearchPaths(package: package, project: project)
+        }
+
         // save the project
         try project.save(to: generator.projectPath)
 
