@@ -9,6 +9,8 @@ import Foundation
 import TSCBasic
 import TSCUtility
 import Xcodeproj
+import PackageGraph
+import PackageModel
 
 struct ProjectGenerator {
 
@@ -134,6 +136,36 @@ extension Xcode.Project {
 
         for target in self.targets where targets.contains(target.name) {
             target.buildSettings.xcconfigFileRef = ref
+        }
+    }
+
+    func fixClangHeaderSearchPaths (package: PackageInfo, project: Xcode.Project) throws {
+        // The package root directory
+        let rootDirectory = try AbsolutePath(validating: package.rootDirectory.path)
+
+        // Retrieve targets using a C based language (Objc, C, C++)
+        let clangTargets = package.graph.allTargets.compactMap { $0.underlyingTarget as? ClangTarget }
+
+        // Fix header search paths for each C based language target
+        for clangTarget in clangTargets {
+            let xcodeTarget = project.frameworkTargets.first { $0.name == clangTarget.name }
+            guard let xcodeTarget = xcodeTarget else { continue }
+
+            let clangHeaderSearchPaths = Set(
+                clangTarget.buildSettings.assignments
+                    .filter { declation, _ in declation == .HEADER_SEARCH_PATHS }
+                    .flatMap { _, assignment in assignment.flatMap { $0.values } }
+            )
+
+            guard let headerSearchPaths = xcodeTarget.buildSettings.common.HEADER_SEARCH_PATHS else {
+                continue
+            }
+
+            let targetRelativePath = clangTarget.path.relative(to: rootDirectory)
+            xcodeTarget.buildSettings.common.HEADER_SEARCH_PATHS = headerSearchPaths.map { path in
+                guard clangHeaderSearchPaths.contains(path) else { return path }
+                return "$(SRCROOT)/\(targetRelativePath)/\(path)"
+            }
         }
     }
 
