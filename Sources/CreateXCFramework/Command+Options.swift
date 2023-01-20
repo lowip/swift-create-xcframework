@@ -43,6 +43,8 @@ extension Command {
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
 
+        @Flag(help: "Resolves symliked headers for clang targets to allow correct modulemap generation.")
+        var resolveClangSymlinkedHeaders = false
 
         // MARK: - Output Options
 

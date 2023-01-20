@@ -9,6 +9,7 @@ import Foundation
 import TSCBasic
 import TSCUtility
 import Xcodeproj
+import PackageModel
 
 struct ProjectGenerator {
 
@@ -134,6 +135,20 @@ extension Xcode.Project {
 
         for target in self.targets where targets.contains(target.name) {
             target.buildSettings.xcconfigFileRef = ref
+        }
+    }
+
+    func resolveClangSymlinkedHeaders (package: PackageInfo) throws {
+        // Retrieve targets using a C based language (Objc, C, C++)
+        let clangTargets = package.graph.allTargets.compactMap { $0.underlyingTarget as? ClangTarget }
+
+        for target in clangTargets {
+            for header in try walk(target.includeDir) {
+                guard localFileSystem.isSymlink(header) else { continue }
+                let path = header.parentDirectory.appending(RelativePath(try localFileSystem.readFileContents(header)))
+                try localFileSystem.removeFileTree(header)
+                try localFileSystem.copy(from: path, to: header)
+            }
         }
     }
 

@@ -81,6 +81,10 @@ struct Command: ParsableCommand {
             try project.enableDistribution(targets: productNames, xcconfig: AbsolutePath(package.distributionBuildXcconfig.path).relative(to: AbsolutePath(package.rootDirectory.path)))
         }
 
+        if self.options.resolveClangSymlinkedHeaders {
+            try project.resolveClangSymlinkedHeaders(package: package)
+        }
+
         // save the project
         try project.save(to: generator.projectPath)
 
