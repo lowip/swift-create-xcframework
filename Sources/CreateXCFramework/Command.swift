@@ -56,6 +56,14 @@ struct Command: ParsableCommand {
             }
         }
 
+        // Fix SDWebImage headers:
+        // - They currenly exist under the 'include/SDWebImage/' directory as symbolic links to
+        //   other paths in the repository.
+        // - We recreate those paths in the 'include/' directory and delete 'include/SDWebImage'.
+        if self.options.fixSDWebImageHeaders {
+            try runFixSDWebImageHeader(package: package)
+        }
+
         // generate the Xcode project file
         let generator = ProjectGenerator(package: package)
 
@@ -140,6 +148,27 @@ struct Command: ParsableCommand {
             }
 
         }
+    }
+
+    func runFixSDWebImageHeader(package: PackageInfo) throws {
+        if let sdWebImage = package.graph.allTargets.first(where: { $0.name == "SDWebImage" }),
+           let target = sdWebImage.underlyingTarget as? ClangTarget {
+            let coreDir = target.sources.root.appending(component: "Core")
+            for header in try walk(coreDir).filter({ localFileSystem.isFile($0) && $0.extension == "h" }) {
+                let link = target.includeDir.appending(component: header.basename)
+                try localFileSystem.removeFileTree(link)
+                try localFileSystem.createSymbolicLink(link, pointingAt: header, relative: true)
+            }
+            let headersDir = target.includeDir.appending(component: "SDWebImage")
+            try localFileSystem.removeFileTree(headersDir)
+
+            // Copy SDWebImage.h
+            let umbrellaHeader = target.path.parentDirectory.appending(components: ["WebImage", "SDWebImage.h"])
+            let link = target.includeDir.appending(component: umbrellaHeader.basename)
+            try localFileSystem.removeFileTree(link)
+            try localFileSystem.createSymbolicLink(link, pointingAt: umbrellaHeader, relative: true)
+        }
+
     }
 }
 

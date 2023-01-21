@@ -43,9 +43,11 @@ extension Command {
         @Flag(help: "Fix the path to the headers when using the SwiftPM '.headerSearchPath(...)' build setting.")
         var fixClangHeaderSearchPaths: Bool = false
 
+        @Flag(name: .customLong("fix-sdwebimage-headers"), help: "Fix the headers for SDWebImage.")
+        var fixSDWebImageHeaders = false
+
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
-
 
         // MARK: - Output Options
 
