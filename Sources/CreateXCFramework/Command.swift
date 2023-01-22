@@ -81,7 +81,12 @@ struct Command: ParsableCommand {
 
         // get valid packages and their SDKs
         let productNames = try package.validProductNames(project: project)
-        let sdks = platforms.flatMap { $0.sdks }
+        var sdks = platforms.flatMap { $0.sdks }
+
+        // Filter out simulators destinations / sdks
+        if self.options.noSim {
+            sdks = sdks.filter { $0.destination.lowercased().contains("simulator") }
+        }
 
         // we've applied the xcconfig to everything, but some dependencies (*cough* swift-nio)
         // have build errors, so we remove it from targets we're not building

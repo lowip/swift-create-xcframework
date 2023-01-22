@@ -46,6 +46,9 @@ extension Command {
         @Flag(name: .customLong("fix-sdwebimage-headers"), help: "Fix the headers for SDWebImage.")
         var fixSDWebImageHeaders = false
 
+        @Flag(help: "Disables support for simulators.")
+        var noSim = false
+
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
 
