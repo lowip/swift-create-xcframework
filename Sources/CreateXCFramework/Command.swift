@@ -85,7 +85,7 @@ struct Command: ParsableCommand {
 
         // Filter out simulators destinations / sdks
         if self.options.noSim {
-            sdks = sdks.filter { $0.destination.lowercased().contains("simulator") }
+            sdks = sdks.filter { !$0.destination.lowercased().contains("simulator") }
         }
 
         // we've applied the xcconfig to everything, but some dependencies (*cough* swift-nio)
