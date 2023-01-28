@@ -49,6 +49,12 @@ extension Command {
         @Flag(help: "Disables support for simulators.")
         var noSim = false
 
+        @Flag(inversion: .prefixedNo, help: "Performs the build steps. This generates all frameworks, but does not package them up into an XCFramework. See the `--merge` option.")
+        var build = true
+        
+        @Flag(inversion: .prefixedNo, help: "Performs the merge steps. This assumes that all frameworks have already been built, and will only merge them into an XCFramework. See the `--build` option.")
+        var merge = true
+
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
 

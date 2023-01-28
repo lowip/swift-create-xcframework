@@ -115,13 +115,20 @@ struct Command: ParsableCommand {
         var frameworkFiles: [String: [XcodeBuilder.BuildResult]] = [:]
 
         for sdk in sdks {
-            try builder.build(targets: productNames, sdk: sdk)
+            // Build the frameworks / use previous build results
+            let fn = self.options.build ? builder.build : builder.buildResults
+            try fn(productNames, sdk)
                 .forEach { pair in
                     if frameworkFiles[pair.key] == nil {
                         frameworkFiles[pair.key] = []
                     }
                     frameworkFiles[pair.key]?.append(pair.value)
                 }
+        }
+
+        // skip rest of command when not merging
+        guard self.options.merge else {
+            Darwin.exit(0)
         }
 
         var xcframeworkFiles: [(String, Foundation.URL)] = []
