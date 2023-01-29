@@ -136,6 +136,12 @@ struct XcodeBuilder {
             command.append("\(setting.name)=\(setting.value)")
         }
 
+        // Add the resultBundlePath if available
+        if let resultBundlePath = self.options.xcresult {
+            let path = URL.init(fileURLWithPath: resultBundlePath).appendingPathComponent(sdk.releaseFolder.replacingOccurrences(of: ".xcarchive", with: ".xcresult"))
+            command += [ "-resultBundlePath", path.path ]
+        }
+
         // add our targets
         command += [ "-scheme", target ]
 
