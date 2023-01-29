@@ -111,13 +111,3 @@ enum TargetPlatform: String, ExpressibleByArgument, CaseIterable {
         }
     }
 }
-
-extension TargetPlatform.SDK {
-
-  func xcresult(target: String) -> String {
-      releaseFolder
-          .replacingOccurrences(of: "Release", with: target)
-          .appending(".xcresult")
-  }
-
-}

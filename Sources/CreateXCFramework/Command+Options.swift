@@ -55,9 +55,6 @@ extension Command {
         @Flag(inversion: .prefixedNo, help: "Performs the merge steps. This assumes that all frameworks have already been built, and will only merge them into an XCFramework. See the `--build` option.")
         var merge = true
 
-        @Option(name: .long, help: "Where to place the build result bundles ('.xcresult' bundles). The result bundles are not exported by default.")
-        var xcresult: String?
-
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
 
