@@ -114,7 +114,7 @@ enum TargetPlatform: String, ExpressibleByArgument, CaseIterable {
 
 extension TargetPlatform.SDK {
 
-  var xcresult: String {
+  func xcresult(target: String) -> String {
       releaseFolder
           .replacingOccurrences(of: "Release", with: target)
           .appending(".xcresult")

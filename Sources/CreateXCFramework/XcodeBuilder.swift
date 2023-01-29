@@ -139,7 +139,7 @@ struct XcodeBuilder {
         // Add the resultBundlePath if available
         if let resultBundlePath = self.options.xcresult {
             let path = URL(fileURLWithPath: resultBundlePath)
-                .appendingPathComponent(sdk.xcresult)
+                .appendingPathComponent(sdk.xcresult(target: target))
             command += [ "-resultBundlePath", path.path ]
         }
 
