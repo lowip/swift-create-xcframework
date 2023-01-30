@@ -100,6 +100,22 @@ struct Command: ParsableCommand {
             try project.fixClangHeaderSearchPaths(package: package, project: project)
         }
 
+        // The 'xcodebuild archive' step never reuses any previously built artifact. This slows down
+        // the compilation of targets with nested dependencies.
+        // When compiling a single target, we link against prebuilt XCFrameworks instead of the
+        // source target.
+        if self.options.linkXCFrameworks.count > 0 {
+            precondition(
+                productNames.count == 1,
+                "linkXCFrameworks can only be used when building a single target"
+            )
+            try project.linkXCFrameworks(
+                scheme: productNames.first!,
+                binaries: self.options.linkXCFrameworks,
+                project: project
+            )
+        }
+
         // save the project
         try project.save(to: generator.projectPath)
 

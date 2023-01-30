@@ -6,6 +6,7 @@
 //
 
 import ArgumentParser
+import TSCBasic
 import PackageModel
 
 extension Command {
@@ -54,6 +55,18 @@ extension Command {
         
         @Flag(inversion: .prefixedNo, help: "Performs the merge steps. This assumes that all frameworks have already been built, and will only merge them into an XCFramework. See the `--build` option.")
         var merge = true
+
+        @Option(
+            name: .customLong("link-xcframeworks"),
+            parsing: .upToNextOption,
+            help: ArgumentHelp(
+                "The 'xcodebuild archive' step never reuses any previously built artifact. This slows down"
+                + " the compilation of targets with nested dependencies."
+                + " When compiling a single target, the XCFramewotks passed to --link-xcframeworks are used instead of the"
+                + " project dependency targets."
+            )
+        )
+        var linkXCFrameworks: [AbsolutePath] = []
 
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []

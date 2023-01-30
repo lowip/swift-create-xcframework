@@ -169,6 +169,30 @@ extension Xcode.Project {
         }
     }
 
+    func linkXCFrameworks (
+        scheme: String,
+        binaries: [AbsolutePath],
+        project: Xcode.Project
+    ) throws {
+        guard let target = project.frameworkTargets.first(where: { $0.name == scheme }) else {
+            return
+        }
+
+        // Remove all dependencies
+        target.dependencies = []
+
+        // Get framework build phase + replace all frameworks with binaries
+        let frameworks = target.buildPhases.compactMap({ $0 as? Xcode.FrameworksBuildPhase }).first
+        ?? target.addFrameworksBuildPhase()
+        // - Remove all
+        frameworks.files = []
+        // - Add binaries
+        for binary in binaries {
+            let ref = project.mainGroup.addFileReference(path: binary.pathString, name: binary.basename)
+            frameworks.addBuildFile(fileRef: ref)
+        }
+    }
+
     func save (to path: AbsolutePath) throws {
         try open(path.appending(component: "project.pbxproj")) { stream in
             // Serialize the project model we created to a plist, and return
