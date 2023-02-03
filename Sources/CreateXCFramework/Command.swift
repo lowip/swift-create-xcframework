@@ -56,6 +56,14 @@ struct Command: ParsableCommand {
             }
         }
 
+        // Fix SDWebImage headers:
+        // - They currenly exist under the 'include/SDWebImage/' directory as symbolic links to
+        //   other paths in the repository.
+        // - We recreate those paths in the 'include/' directory and delete 'include/SDWebImage'.
+        if self.options.fixSDWebImageHeaders {
+            try runFixSDWebImageHeader(package: package)
+        }
+
         // generate the Xcode project file
         let generator = ProjectGenerator(package: package)
 
@@ -73,12 +81,39 @@ struct Command: ParsableCommand {
 
         // get valid packages and their SDKs
         let productNames = try package.validProductNames(project: project)
-        let sdks = platforms.flatMap { $0.sdks }
+        var sdks = platforms.flatMap { $0.sdks }
+
+        // Filter out simulators destinations / sdks
+        if self.options.noSim {
+            sdks = sdks.filter { !$0.destination.lowercased().contains("simulator") }
+        }
 
         // we've applied the xcconfig to everything, but some dependencies (*cough* swift-nio)
         // have build errors, so we remove it from targets we're not building
         if self.options.stackEvolution == false {
             try project.enableDistribution(targets: productNames, xcconfig: AbsolutePath(package.distributionBuildXcconfig.path).relative(to: AbsolutePath(package.rootDirectory.path)))
+        }
+
+        // Workaround SwiftPM not respecting the `.headerSearchPath(...)` build settings in the
+        // generated Xcode project.
+        if self.options.fixClangHeaderSearchPaths {
+            try project.fixClangHeaderSearchPaths(package: package, project: project)
+        }
+
+        // The 'xcodebuild archive' step never reuses any previously built artifact. This slows down
+        // the compilation of targets with nested dependencies.
+        // When compiling a single target, we link against prebuilt XCFrameworks instead of the
+        // source target.
+        if self.options.linkXCFrameworks.count > 0 {
+            precondition(
+                productNames.count == 1,
+                "linkXCFrameworks can only be used when building a single target"
+            )
+            try project.linkXCFrameworks(
+                scheme: productNames.first!,
+                binaries: self.options.linkXCFrameworks,
+                project: project
+            )
         }
 
         // save the project
@@ -96,13 +131,20 @@ struct Command: ParsableCommand {
         var frameworkFiles: [String: [XcodeBuilder.BuildResult]] = [:]
 
         for sdk in sdks {
-            try builder.build(targets: productNames, sdk: sdk)
+            // Build the frameworks / use previous build results
+            let fn = self.options.build ? builder.build : builder.buildResults
+            try fn(productNames, sdk)
                 .forEach { pair in
                     if frameworkFiles[pair.key] == nil {
                         frameworkFiles[pair.key] = []
                     }
                     frameworkFiles[pair.key]?.append(pair.value)
                 }
+        }
+
+        // skip rest of command when not merging
+        guard self.options.merge else {
+            Darwin.exit(0)
         }
 
         var xcframeworkFiles: [(String, Foundation.URL)] = []
@@ -134,6 +176,27 @@ struct Command: ParsableCommand {
             }
 
         }
+    }
+
+    func runFixSDWebImageHeader(package: PackageInfo) throws {
+        if let sdWebImage = package.graph.allTargets.first(where: { $0.name == "SDWebImage" }),
+           let target = sdWebImage.underlyingTarget as? ClangTarget {
+            let coreDir = target.sources.root.appending(component: "Core")
+            for header in try walk(coreDir).filter({ localFileSystem.isFile($0) && $0.extension == "h" }) {
+                let link = target.includeDir.appending(component: header.basename)
+                try localFileSystem.removeFileTree(link)
+                try localFileSystem.createSymbolicLink(link, pointingAt: header, relative: true)
+            }
+            let headersDir = target.includeDir.appending(component: "SDWebImage")
+            try localFileSystem.removeFileTree(headersDir)
+
+            // Copy SDWebImage.h
+            let umbrellaHeader = target.path.parentDirectory.appending(components: ["WebImage", "SDWebImage.h"])
+            let link = target.includeDir.appending(component: umbrellaHeader.basename)
+            try localFileSystem.removeFileTree(link)
+            try localFileSystem.createSymbolicLink(link, pointingAt: umbrellaHeader, relative: true)
+        }
+
     }
 }
 

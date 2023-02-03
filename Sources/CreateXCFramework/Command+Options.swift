@@ -6,6 +6,7 @@
 //
 
 import ArgumentParser
+import TSCBasic
 import PackageModel
 
 extension Command {
@@ -40,9 +41,35 @@ extension Command {
         @Flag(help: "Enables Library Evolution for the whole build stack. Normally we apply it only to the targets listed to be built to work around issues with projects that don't support it.")
         var stackEvolution: Bool = false
 
+        @Flag(help: "Fix the path to the headers when using the SwiftPM '.headerSearchPath(...)' build setting.")
+        var fixClangHeaderSearchPaths: Bool = false
+
+        @Flag(name: .customLong("fix-sdwebimage-headers"), help: "Fix the headers for SDWebImage.")
+        var fixSDWebImageHeaders = false
+
+        @Flag(help: "Disables support for simulators.")
+        var noSim = false
+
+        @Flag(inversion: .prefixedNo, help: "Performs the build steps. This generates all frameworks, but does not package them up into an XCFramework. See the `--merge` option.")
+        var build = true
+        
+        @Flag(inversion: .prefixedNo, help: "Performs the merge steps. This assumes that all frameworks have already been built, and will only merge them into an XCFramework. See the `--build` option.")
+        var merge = true
+
+        @Option(
+            name: .customLong("link-xcframeworks"),
+            parsing: .upToNextOption,
+            help: ArgumentHelp(
+                "The 'xcodebuild archive' step never reuses any previously built artifact. This slows down"
+                + " the compilation of targets with nested dependencies."
+                + " When compiling a single target, the XCFramewotks passed to --link-xcframeworks are used instead of the"
+                + " project dependency targets."
+            )
+        )
+        var linkXCFrameworks: [AbsolutePath] = []
+
         @Option(help: ArgumentHelp("Arbitrary Xcode build settings that are passed directly to the `xcodebuild` invocation. Can be specified multiple times.", valueName: "NAME=VALUE"))
         var xcSetting: [BuildSetting] = []
-
 
         // MARK: - Output Options
 

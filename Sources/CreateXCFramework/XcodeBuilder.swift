@@ -93,6 +93,10 @@ struct XcodeBuilder {
             }
         }
 
+        return buildResults(targets: targets, sdk: sdk)
+    }
+
+    func buildResults (targets: [String], sdk: TargetPlatform.SDK) -> [String: BuildResult] {
         return targets
             .reduce(into: [String: BuildResult]()) { dict, name in
                 dict[name] = BuildResult (
